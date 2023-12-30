@@ -1,0 +1,48 @@
+#----    Dockerfile    ----
+FROM rocker/rstudio:4.3.2
+
+# Install renv 1.0.3 from github Commited on Dec 21, 2023
+RUN R -e "install.packages('remotes', repos = c(CRAN = 'https://cloud.r-project.org'))"
+ENV COMMITSHA e56566dc30ebd19910b70248edea5e58f02a07d5
+RUN R -e "remotes::install_github('rstudio/renv@${COMMITSHA}')"
+
+# Replace mirror (replace one near you)
+RUN echo "deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy main restricted universe multiverse\n" > /etc/apt/sources.list && \
+  echo "deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy-updates main restricted universe multiverse\n" >> /etc/apt/sources.list && \
+  echo "deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy-backports main restricted universe multiverse\n" >> /etc/apt/sources.list && \
+  echo "deb http://security.ubuntu.com/ubuntu/ jammy-security main restricted universe multiverse" >> /etc/apt/sources.list
+
+RUN apt-get -y update && \
+    apt-get -y upgrade
+
+# Intall the packages essenital for devtools
+RUN apt-get install -y libcurl4-gnutls-dev \
+					libssl-dev \
+					libfontconfig1-dev \
+					libxml2-dev \
+					libharfbuzz-dev \
+					libfribidi-dev \
+					libfreetype6-dev \
+					libpng-dev \
+					libtiff5-dev \
+					libjpeg-dev \
+					build-essential \
+					libgit2-dev
+
+# Install devtools 2.4.5
+RUN R -e "remotes::install_version('devtools', version = '2.4.5', repos = 'https://mirrors.tuna.tsinghua.edu.cn/CRAN/')"
+RUN R -e "remotes::install_version('roxygen2', version = '7.2.3', repos = 'https://mirrors.tuna.tsinghua.edu.cn/CRAN/')"
+RUN R -e "remotes::install_version('testthat', version = '3.2.1', repos = 'https://mirrors.tuna.tsinghua.edu.cn/CRAN/')"
+RUN R -e "remotes::install_version('knitr', version = '1.45', repos = 'https://mirrors.tuna.tsinghua.edu.cn/CRAN/')"
+
+# Set the path of renv cached packages
+ENV RENV_PATHS_CACHE /home/rstudio/renv-cache/R/renv
+
+# Install packages
+WORKDIR /home/rstudio/
+
+# Change ownership
+RUN chown -R rstudio:rstudio /home/rstudio/
+
+# Set the rstudio password
+ENV PASSWORD yourpassword
