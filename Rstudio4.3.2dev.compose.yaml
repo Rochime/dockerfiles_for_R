@@ -1,0 +1,15 @@
+#----    docker-compose.yaml    ----#
+
+# version: "3.9"
+   
+services:
+  app:       # First container
+    image: rstudio432:1.0.0
+    environment:
+      - RENV_PATHS_CACHE=/home/rstudio/renv-cache/R/renv
+      - PASSWORD=yourpassword
+    ports:
+      - "127.0.0.1:8787:8787"
+    working_dir: /home/rstudio
+    volumes:
+      - ./:/home/rstudio
