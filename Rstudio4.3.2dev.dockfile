@@ -34,6 +34,7 @@ RUN R -e "remotes::install_version('devtools', version = '2.4.5', repos = 'https
 RUN R -e "remotes::install_version('roxygen2', version = '7.2.3', repos = 'https://mirrors.tuna.tsinghua.edu.cn/CRAN/')"
 RUN R -e "remotes::install_version('testthat', version = '3.2.1', repos = 'https://mirrors.tuna.tsinghua.edu.cn/CRAN/')"
 RUN R -e "remotes::install_version('knitr', version = '1.45', repos = 'https://mirrors.tuna.tsinghua.edu.cn/CRAN/')"
+RUN R -e "remotes::install_version('tidyverse', version = '2.0.0', repos = 'https://mirrors.tuna.tsinghua.edu.cn/CRAN/')"
 
 # Set the path of renv cached packages
 ENV RENV_PATHS_CACHE /home/rstudio/renv-cache/R/renv
