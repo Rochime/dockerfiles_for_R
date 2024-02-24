@@ -1,6 +1,10 @@
 #----    Dockerfile    ----
 FROM rocker/rstudio:4.3.2
 
+# set CRAN mirror
+RUN echo 'options(repos=structure(c(CRAN="https://mirrors.tuna.tsinghua.edu.cn/CRAN/")))' > /home/rstudio/.Rprofile && \
+    echo 'options(BioC_mirror="https://mirrors.tuna.tsinghua.edu.cn/bioconductor")' >> /home/rstudio/.Rprofile
+
 # Install renv 1.0.3 from github Commited on Dec 21, 2023
 RUN R -e "install.packages('remotes', repos = c(CRAN = 'https://cloud.r-project.org'))"
 ENV COMMITSHA e56566dc30ebd19910b70248edea5e58f02a07d5
