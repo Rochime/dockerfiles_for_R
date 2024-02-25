@@ -1,0 +1,127 @@
+# Base Image
+FROM rstudio/r-base:4.2.1-focal
+
+# Metadata
+LABEL base.image="r-base:4.2.1"
+LABEL software="ExomeDepth"
+LABEL description="CNV calling for DNA capture assays"
+LABEL website="https://CRAN.R-project.org/package=ExomeDepth"
+LABEL documentation="https://CRAN.R-project.org/package=ExomeDepth"
+LABEL license="https://CRAN.R-project.org/package=ExomeDepth"
+
+# Maintainer
+MAINTAINER David Brawand <dbrawand@nhs.net>
+
+# set working directory
+WORKDIR /root
+ENV HOME /root
+
+# Replace mirror (replace one near you)
+RUN echo "deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy main restricted universe multiverse\n" > /etc/apt/sources.list && \
+  echo "deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy-updates main restricted universe multiverse\n" >> /etc/apt/sources.list && \
+  echo "deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy-backports main restricted universe multiverse\n" >> /etc/apt/sources.list && \
+  echo "deb http://security.ubuntu.com/ubuntu/ jammy-security main restricted universe multiverse" >> /etc/apt/sources.list
+
+RUN apt-get -y update
+RUN apt-get --yes install \
+	libcurl4-openssl-dev \
+	time \
+	libpoppler-cpp-dev \
+	texlive \
+	libssl-dev \
+	libfontconfig1-dev \
+	libxml2-dev
+
+# Intall the packages essenital for devtools
+RUN apt-get install -y libcurl4-gnutls-dev \
+					libssl-dev \
+					libfontconfig1-dev \
+					libxml2-dev \
+					libharfbuzz-dev \
+					libfribidi-dev \
+					libfreetype6-dev \
+					libpng-dev \
+					libtiff5-dev \
+					libjpeg-dev \
+					build-essential \
+					libgit2-dev
+RUN apt-get install -y cmake
+RUN apt-get install -y libcairo2-dev
+
+# Install devtools 2.4.5
+RUN R -e "install.packages('remotes', repos = c(CRAN = 'https://mirrors.tuna.tsinghua.edu.cn/CRAN/'))" && \
+	Rscript -e "library('remotes')"
+RUN R -e "remotes::install_version('devtools', version = '2.4.5', repos = 'https://mirrors.tuna.tsinghua.edu.cn/CRAN/')" && \
+	Rscript -e "library('devtools')"
+
+
+# LateX packages (Locked on 2020 release)
+RUN tlmgr init-usertree
+# RUN tlmgr repository add ftp://tug.org/historic/systems/texlive/2020/tlnet-final
+# RUN tlmgr repository remove https://mirror.ctan.org/systems/texlive/tlnet
+# RUN tlmgr option repository ftp://tug.org/historic/systems/texlive/2020/tlnet-final
+RUN tlmgr update --self
+RUN tlmgr install framed && \
+	tlmgr install mdframed && \
+	tlmgr install zref && \
+	tlmgr install needspace && \
+	tlmgr install dingbat && \
+	tlmgr install booktabs && \
+	tlmgr install makecell && \
+	tlmgr install colortbl && \
+	tlmgr install parskip && \
+	tlmgr install fancyhdr && \
+	tlmgr install lastpage && \
+	tlmgr install pgf && \
+	tlmgr install xcolor
+
+# set CRAN mirror
+RUN echo 'options(repos=structure(c(CRAN="https://mirrors.tuna.tsinghua.edu.cn/CRAN/")))' > /root/.Rprofile && \
+    echo 'options(BioC_mirror="https://mirrors.tuna.tsinghua.edu.cn/bioconductor")' >> /root/.Rprofile
+
+# R packages (BioC)
+# RUN Rscript -e "install.packages('devtools')" && \
+RUN Rscript -e "options(repos=structure(c(CRAN='https://mirrors.tuna.tsinghua.edu.cn/CRAN/')));install.packages('BiocManager')"
+RUN Rscript -e "options(BioC_mirror='https://mirrors.tuna.tsinghua.edu.cn/bioconductor');BiocManager::install(version = '3.15', ask = FALSE)"
+RUN Rscript -e "options(BioC_mirror='https://mirrors.tuna.tsinghua.edu.cn/bioconductor');BiocManager::install(c('Biostrings','IRanges','Rsamtools','GenomicRanges','GenomicAlignments'))"
+
+# R packages (CRAN)
+RUN Rscript -e "install.packages('optparse')" && \
+	Rscript -e "library('optparse')" 
+RUN Rscript -e "install.packages('randomForest')" && \
+	Rscript -e "library('randomForest')" 
+RUN Rscript -e "install.packages('aod')" && \
+	Rscript -e "library('aod')"
+RUN Rscript -e "install.packages('plyr')" && \
+	Rscript -e "library('plyr')"
+RUN Rscript -e "install.packages('knitr', repos=structure(c(CRAN='https://mirrors.tuna.tsinghua.edu.cn/CRAN/')))" && \
+	Rscript -e "library('knitr')"
+RUN Rscript -e "install.packages('kableExtra', repos=structure(c(CRAN='https://mirrors.tuna.tsinghua.edu.cn/CRAN/')))" && \
+	Rscript -e "library('kableExtra')"
+RUN Rscript -e "install.packages('tinytex', repos=structure(c(CRAN='https://mirrors.tuna.tsinghua.edu.cn/CRAN/')))" && \
+	Rscript -e "library('tinytex')"
+RUN Rscript -e "install.packages('xtable', repos=structure(c(CRAN='https://mirrors.tuna.tsinghua.edu.cn/CRAN/')))" && \
+	Rscript -e "library('xtable')"
+RUN Rscript -e "install.packages('moments', repos=structure(c(CRAN='https://mirrors.tuna.tsinghua.edu.cn/CRAN/')))" && \
+	Rscript -e "library('moments')"
+
+# install ED from source as CRAN rejected ED (10/2022) v1.1.16
+# CRAN reinstated ED (11/2020) v1.1.16
+# Install renv 1.0.3 from github Commited on Dec 21, 2023
+
+ENV COMMITSHA 94c03ee245d773d224f1b407fd6089cf35b582e0
+RUN Rscript -e "remotes::install_github('vplagnol/ExomeDepth@${COMMITSHA}')" && \
+ 	Rscript -e "library('ExomeDepth')"
+
+# add exomedepth scripts and report template
+ADD readCount.R /root
+ADD ed2vcf.R /root
+ADD exomeDepth.R /root
+ADD exomeDepth.Rnw /root
+# ADD VERSION /root
+
+# add QC configs
+COPY qc_config/* /root/
+
+# Rscript as entrypoint
+# ENTRYPOINT ["/usr/bin/Rscript"]
